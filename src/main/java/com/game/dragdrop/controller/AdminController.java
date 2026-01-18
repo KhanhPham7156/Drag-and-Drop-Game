@@ -21,13 +21,15 @@ public class AdminController {
 
     @PostMapping("/level")
     public GameLevel createLevel(@RequestParam("image") MultipartFile file, @RequestParam("answer") String answer,
-            @RequestParam("hint") String hint, @RequestParam("levelOrder") Integer levelOrder) {
+            @RequestParam("hint") String hint, @RequestParam("levelOrder") Integer levelOrder,
+            @RequestParam(value = "roomId", required = false) Long roomId) {
         String imageUrl = storageService.uploadFile(file);
         GameLevel level = new GameLevel();
         level.setImageUrl(imageUrl);
         level.setAnswer(answer);
         level.setHint(hint);
         level.setLevelOrder(levelOrder);
+        level.setRoomId(roomId);
         level.setOptions(answer.chars().mapToObj(c -> String.valueOf((char) c)).collect(Collectors.toList()));
         return levelRepository.save(level);
     }
@@ -40,22 +42,32 @@ public class AdminController {
     }
 
     @PutMapping("/level/{id}")
-    public GameLevel updateLevel(@PathVariable Long id, @RequestParam("image") MultipartFile file,
+    public GameLevel updateLevel(@PathVariable Long id,
+            @RequestParam(value = "image", required = false) MultipartFile file,
             @RequestParam("answer") String answer, @RequestParam("hint") String hint,
-            @RequestParam("levelOrder") Integer levelOrder) {
+            @RequestParam("levelOrder") Integer levelOrder,
+            @RequestParam(value = "roomId", required = false) Long roomId) {
         GameLevel level = levelRepository.findById(id).orElseThrow(() -> new RuntimeException("Level not found"));
-        storageService.deleteFile(level.getImageUrl());
-        String imageUrl = storageService.uploadFile(file);
-        level.setImageUrl(imageUrl);
+
+        if (file != null && !file.isEmpty()) {
+            storageService.deleteFile(level.getImageUrl());
+            String imageUrl = storageService.uploadFile(file);
+            level.setImageUrl(imageUrl);
+        }
+
         level.setAnswer(answer);
         level.setHint(hint);
         level.setLevelOrder(levelOrder);
+        level.setRoomId(roomId);
         level.setOptions(answer.chars().mapToObj(c -> String.valueOf((char) c)).collect(Collectors.toList()));
         return levelRepository.save(level);
     }
 
     @GetMapping("/level")
-    public List<GameLevel> getAllLevels() {
+    public List<GameLevel> getAllLevels(@RequestParam(value = "roomId", required = false) Long roomId) {
+        if (roomId != null) {
+            return levelRepository.findByRoomId(roomId);
+        }
         return levelRepository.findAll();
     }
 

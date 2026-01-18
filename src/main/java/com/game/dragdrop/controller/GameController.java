@@ -29,9 +29,12 @@ public class GameController {
         return level;
     }
 
-
     @GetMapping("/levels")
-    public List<GameLevel> getAllLevels() {
+    public List<GameLevel> getAllLevels(
+            @org.springframework.web.bind.annotation.RequestParam(required = false) Long roomId) {
+        if (roomId != null) {
+            return levelRepository.findByRoomId(roomId);
+        }
         return levelRepository.findAll();
     }
 }

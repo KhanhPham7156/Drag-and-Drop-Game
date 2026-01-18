@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drag & Drop Puzzle - Welcome</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-bg: #0f172a;
+            --accent: #6366f1;
+            --secondary: #ec4899;
+            --text: #f8fafc;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--primary-bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            background-image: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.2), transparent),
+                              radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.2), transparent);
+        }
+
+        h1 {
+            font-size: 4rem;
+            margin-bottom: 3rem;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+
+        .role-container {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .role-card {
+            width: 250px;
+            padding: 2.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            text-decoration: none;
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .role-card:hover {
+            transform: translateY(-10px);
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .icon-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--secondary));
+            display: grid;
+            place-items: center;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .role-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .role-desc {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            line-height: 1.5;
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1>Drag & Drop Puzzle</h1>
+
+    <div class="role-container">
+        <!-- Admin Role -->
+        <a href="/login.html" class="role-card">
+            <div class="icon-circle">
+                <i class="fa-solid fa-user-shield"></i>
+            </div>
+            <div class="role-title">Admin</div>
+            <div class="role-desc">Đăng nhập để quản lý game, tạo phòng và duyệt thành viên.</div>
+        </a>
+
+        <!-- Guest Role -->
+        <a href="/client/rooms.html" class="role-card">
+            <div class="icon-circle">
+                <i class="fa-solid fa-gamepad"></i>
+            </div>
+            <div class="role-title">Guest</div>
+            <div class="role-desc">Tạo hoặc tham gia phòng chơi để bắt đầu trải nghiệm.</div>
+        </a>
+    </div>
+
+</body>
+</html>

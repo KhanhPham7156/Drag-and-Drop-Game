@@ -1,15 +1,9 @@
 package com.game.dragdrop.model;
 
 import java.util.List;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 import jakarta.persistence.*;
 
-@Entity // JPA Entity
-@Data // Lombok Data  
-@NoArgsConstructor // Lombok NoArgsConstructor
-@AllArgsConstructor // Lombok AllArgsConstructor
+@Entity
 public class GameLevel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,8 +19,70 @@ public class GameLevel {
 
     private Integer levelOrder;
 
+    @Column(name = "room_id")
+    private Long roomId;
+
     @ElementCollection
     @CollectionTable(name = "level_options", joinColumns = @JoinColumn(name = "level_id"))
     @Column(name = "option_text")
     private List<String> options;
+
+    public GameLevel() {
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+    public String getAnswer() {
+        return answer;
+    }
+
+    public void setAnswer(String answer) {
+        this.answer = answer;
+    }
+
+    public String getHint() {
+        return hint;
+    }
+
+    public void setHint(String hint) {
+        this.hint = hint;
+    }
+
+    public Integer getLevelOrder() {
+        return levelOrder;
+    }
+
+    public void setLevelOrder(Integer levelOrder) {
+        this.levelOrder = levelOrder;
+    }
+
+    public Long getRoomId() {
+        return roomId;
+    }
+
+    public void setRoomId(Long roomId) {
+        this.roomId = roomId;
+    }
+
+    public List<String> getOptions() {
+        return options;
+    }
+
+    public void setOptions(List<String> options) {
+        this.options = options;
+    }
 }

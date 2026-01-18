@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chọn Phòng Chơi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css"> <!-- Reuse game style -->
+    <style>
+        .rooms-container {
+            max-width: 800px;
+            width: 90%;
+            margin: 0 auto;
+            padding-top: 50px;
+        }
+        .room-card {
+            background: var(--bg-panel);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .room-card:hover {
+            border-color: var(--accent-color);
+            transform: scale(1.01);
+        }
+        .room-name { font-size: 1.2rem; font-weight: bold; }
+        .room-status { 
+            color: #00e676; 
+            font-size: 0.9rem;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .join-btn {
+            padding: 8px 20px;
+            border-radius: 20px;
+            background: var(--primary-color);
+            color: white;
+            border: none; font-weight: bold;
+        }
+        h1 { text-align: center; margin-bottom: 30px; }
+        .back-btn {
+            position: absolute; top: 20px; left: 20px;
+            color: white; text-decoration: none;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 8px 16px; border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-btn">← Quay lại</a>
+    <div class="rooms-container">
+        <h1>Danh Sách Phòng Chơi</h1>
+        <div id="room-list">
+            <p style="text-align:center; color: #aaa;">Đang tải danh sách phòng...</p>
+        </div>
+    </div>
+
+    <script>
+        async function loadRooms() {
+            try {
+                const res = await fetch('/api/rooms/all');
+                const rooms = await res.json();
+                const container = document.getElementById('room-list');
+                container.innerHTML = '';
+                
+                if (rooms.length === 0) {
+                    container.innerHTML = '<p style="text-align:center;">Chưa có phòng nào được tạo.</p>';
+                }
+
+                rooms.forEach(room => {
+                    const div = document.createElement('div');
+                    div.className = 'room-card';
+                    div.innerHTML = `
+                        <div>
+                            <div class="room-name">${room.name}</div>
+                            <div class="room-status">● Đang hoạt động</div>
+                        </div>
+                        <button class="join-btn">Vào Chơi</button>
+                    `;
+                    div.onclick = () => {
+                        window.location.href = `/client/index.html?roomId=${room.id}`;
+                    };
+                    container.appendChild(div);
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        loadRooms();
+    </script>
+</body>
+</html>

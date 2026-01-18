@@ -6,94 +6,146 @@
     <title>Admin Dashboard</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="admin-container">
         <aside class="sidebar">
             <h2 class="logo">Admin Dashboard</h2>
-            <nav>
-                <a href="#dashboard" class="active">Màn chơi</a>
-                <a href="#players">Người chơi</a>
-                <a href="#settings">Cài đặt</a>
+            <div class="user-info">
+                Hi, <span id="current-username">...</span>
+            </div>
+            <nav id="nav-links">
+                <a href="#" class="nav-btn active" data-tab="rooms">Quản lý Phòng</a>
+                <!-- Hidden Menu: Only accessed via Create/Config Room -->
+                <a href="#" class="nav-btn hidden" id="nav-dashboard" data-tab="dashboard">Màn chơi</a>
+                <a href="#" class="nav-btn hidden" id="nav-users" data-tab="users">Duyệt Admin</a>
+                <a href="#" onclick="handleLogout()" style="color:red; margin-top:20px;">Đăng xuất</a>
             </nav>
         </aside>
 
         <main class="content">
-            <header>
-                <h1>Quản lý Màn chơi</h1>
-                <button class="btn-primary" id="btn-add-level"> + Thêm màn mới </button>
-            </header>
+            
+            <!-- TAB: Quản lý Phòng -->
+            <div id="tab-rooms" class="tab-content">
+                <header>
+                    <h1>Quản lý Phòng chơi</h1>
+                </header>
+                
+                <section class="form-card">
+                    <h3>Tạo phòng mới</h3>
+                    <div style="display:flex; gap:10px; margin-top:15px;">
+                        <input type="text" id="new-room-name" placeholder="Tên phòng..." style="flex:1; padding:10px;">
+                        <button class="btn-primary" onclick="createRoom()">Tạo phòng</button>
+                    </div>
+                </section>
 
-            <!-- Form Thêm/Sửa (Ban đầu ẩn) -->
-            <section id="level-form-section" class="form-card hidden">
-                <div class="card-header">
-                    <h3 id="form-title">Thêm Màn Chơi Mới</h3>
-                </div>
-                <form id="level-form" enctype="multipart/form-data">
-                    <input type="hidden" id="level-id">
-                    
-                    <div class="form-group">
-                        <label>Ảnh hiển thị</label>
-                        <div class="image-upload-wrapper">
-                            <input type="file" id="image-input" name="image" accept="image/*" required>
-                            <div id="image-preview" class="preview-box">
-                                <span>Nhấn để chọn ảnh</span>
-                                <img id="img-preview-tag" src="#" alt="Preview" class="hidden">
+                <section class="list-section">
+                    <h3>Danh sách phòng hiện có</h3>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr><th>ID</th><th>Tên Phòng</th><th>Trạng thái</th><th>Hành động</th></tr>
+                            </thead>
+                            <tbody id="room-table-body"></tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- TAB: Màn chơi (Dashboard) -->
+            <div id="tab-dashboard" class="tab-content hidden">
+                <header style="display:flex; justify-content:space-between; align-items:center;">
+                    <h1>Quản lý Màn chơi</h1>
+                    <div>
+                        <button class="btn-secondary" onclick="backToRooms()" style="margin-right:10px;">Quay lại</button>
+                        <button class="btn-primary" id="btn-add-level"> + Thêm màn mới </button>
+                    </div>
+                </header>
+
+                <section id="level-form-section" class="form-card hidden">
+                    <div class="card-header">
+                        <h3 id="form-title">Thêm Màn Chơi Mới</h3>
+                    </div>
+                    <form id="level-form" enctype="multipart/form-data">
+                        <input type="hidden" id="level-id">
+                        
+                        <div class="form-group">
+                            <label>Ảnh hiển thị</label>
+                            <div class="image-upload-wrapper">
+                                <input type="file" id="image-input" name="image" accept="image/*" required>
+                                <div id="image-preview" class="preview-box">
+                                    <span>Nhấn để chọn ảnh</span>
+                                    <img id="img-preview-tag" src="#" alt="Preview" class="hidden">
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Đáp án chính xác</label>
-                            <input type="text" id="answer" name="answer" placeholder="Vd: APPLE" required>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Đáp án chính xác</label>
+                                <input type="text" id="answer" name="answer" placeholder="Vd: APPLE" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Thứ tự màn</label>
+                                <input type="number" id="levelOrder" name="levelOrder" placeholder="1" required>
+                            </div>
                         </div>
+
                         <div class="form-group">
-                            <label>Thứ tự màn</label>
-                            <input type="number" id="levelOrder" name="levelOrder" placeholder="1" required>
+                            <label>Gợi ý (Hint)</label>
+                            <textarea id="hint" name="hint" rows="2" placeholder="Nhập gợi ý cho người chơi..."></textarea>
                         </div>
-                    </div>
 
-                    <div class="form-group">
-                        <label>Gợi ý (Hint)</label>
-                        <textarea id="hint" name="hint" rows="2" placeholder="Nhập gợi ý cho người chơi..."></textarea>
-                    </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary" id="btn-cancel">Hủy</button>
+                            <button type="submit" class="btn-primary">Lưu màn chơi</button>
+                        </div>
+                    </form>
+                </section>
 
-                    <div class="form-actions">
-                        <button type="button" class="btn-secondary" id="btn-cancel">Hủy</button>
-                        <button type="submit" class="btn-primary">Lưu màn chơi</button>
+                <section class="list-section">
+                    <div class="card-header">
+                        <h3>Danh sách các màn</h3>
                     </div>
-                </form>
-            </section>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Thứ tự</th>
+                                    <th>Ảnh</th>
+                                    <th>Đáp án</th>
+                                    <th>Gợi ý</th>
+                                    <th>Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody id="level-table-body"></tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
 
-            <!-- Danh sách các màn chơi hiện có -->
-            <section class="list-section">
-                <div class="card-header">
-                    <h3>Danh sách các màn</h3>
-                </div>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Thứ tự</th>
-                                <th>Ảnh</th>
-                                <th>Đáp án</th>
-                                <th>Gợi ý</th>
-                                <th>Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody id="level-table-body">
-                            <!-- Dữ liệu sẽ đổ vào đây bằng JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </section>
+            <!-- TAB: Duyệt Admin (Root Only) -->
+            <div id="tab-users" class="tab-content hidden">
+                <header>
+                    <h1>Duyệt Thành Viên (Root)</h1>
+                </header>
+                <section class="list-section">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr><th>ID</th><th>Username</th><th>Trạng thái</th><th>Hành động</th></tr>
+                            </thead>
+                            <tbody id="user-table-body"></tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
         </main>
     </div>
 
-    <!-- Thông báo (Toast) -->
     <div id="toast-container" class="toast-container"></div>
-
     <script src="main.js"></script>
 </body>
 </html>

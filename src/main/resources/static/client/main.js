@@ -39,8 +39,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- API Interactions ---
     async function fetchLevels() {
+        // Get roomId from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get('roomId');
+
+        if (!roomId) {
+            showToast('Không tìm thấy phòng!', 'error');
+            setTimeout(() => window.location.href = '/client/rooms.html', 2000);
+            return;
+        }
+
         try {
-            const response = await fetch('/api/game/levels');
+            const response = await fetch(`/api/game/levels?roomId=${roomId}`);
             if (!response.ok) throw new Error('Failed to fetch levels');
             
             const data = await response.json();
@@ -310,6 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.endGameModal.classList.add('hidden');
         state.score = 0;
         elements.scoreDisplay.textContent = '0';
+        // Reuse fetchLevels so logic remains consistent
         fetchLevels(); 
     }
 
