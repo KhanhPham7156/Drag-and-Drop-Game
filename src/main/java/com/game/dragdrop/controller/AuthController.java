@@ -77,7 +77,7 @@ public class AuthController {
              return Collections.singletonMap("error", "Unauthorized");
         }
         
-        User user = userRepository.findById(id).orElseThrow(() => new RuntimeException("User not found"));
+        User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
         user.setApproved(true);
         userRepository.save(user);
         

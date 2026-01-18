@@ -65,7 +65,7 @@
         <a class="toggle-link" onclick="toggleForm()">Chưa có tài khoản? Đăng ký</a>
     </div>
 
-    <div class="login-card hidden" id="register-form" style="display:none;">
+    <div class="login-card hidden" id="register-form">
         <h2>Đăng ký Admin</h2>
         <input type="text" id="reg-username" placeholder="Username">
         <input type="password" id="reg-password" placeholder="Password">
@@ -77,12 +77,16 @@
         function toggleForm() {
             const login = document.getElementById('login-form');
             const reg = document.getElementById('register-form');
-            if (login.style.display === 'none') {
-                login.style.display = 'block';
-                reg.style.display = 'none';
+            
+            // Toggle visibility by adding/removing 'hidden' class
+            if (login.classList.contains('hidden')) {
+                // Show Login, Hide Register
+                login.classList.remove('hidden');
+                reg.classList.add('hidden');
             } else {
-                login.style.display = 'none';
-                reg.style.display = 'block';
+                // Hide Login, Show Register
+                login.classList.add('hidden');
+                reg.classList.remove('hidden');
             }
         }
 
