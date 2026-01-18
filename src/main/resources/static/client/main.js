@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- Initialization ---
+    let timerInterval = null; // Declare here
     initGame();
 
     function initGame() {
@@ -49,6 +50,51 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Check status periodically
+        const checkStatus = async () => {
+             try {
+                 const statusRes = await fetch(`/api/rooms/${roomId}/status`);
+                 const statusData = await statusRes.json();
+                 
+                 if (statusData.status === 'PLAYING') {
+                     document.getElementById('pending-overlay').classList.add('hidden');
+                     document.getElementById('game-container').classList.remove('hidden');
+                     startLoadingLevels(roomId);
+                 } else if (statusData.status === 'FINISHED') {
+                     alert("Phòng đã kết thúc.");
+                     window.location.href='/client/rooms.html';
+                 } else {
+                     setTimeout(checkStatus, 2000); // Poll every 2s
+                 }
+             } catch(e) { console.error(e); }
+        };
+        
+        // Join Room First
+        try {
+            const playerName = sessionStorage.getItem('playerName') || 'Guest';
+            const joinRes = await fetch(`/api/rooms/${roomId}/join?playerName=${encodeURIComponent(playerName)}`, { method: 'POST' });
+            const joinData = await joinRes.json();
+            
+            if (joinData.error) {
+                alert(joinData.error);
+                window.location.href='/client/rooms.html';
+                return;
+            }
+            
+            state.playerId = joinData.playerId;
+            state.roomId = roomId;
+
+            if (joinData.status === 'WAITING') {
+                checkStatus();
+            } else if (joinData.status === 'PLAYING') {
+                 // Should be blocked by Join API but double check
+                 alert("Phòng đang chơi!");
+                 window.location.href='/client/rooms.html';
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    async function startLoadingLevels(roomId) {
         try {
             const response = await fetch(`/api/game/levels?roomId=${roomId}`);
             if (!response.ok) throw new Error('Failed to fetch levels');
@@ -65,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error('Error:', error);
-            showToast('Lỗi kết nối máy chủ!', 'error');
+            showToast('Lỗi: ' + error.message, 'error');
         }
     }
 
@@ -79,27 +125,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Reset UI
         elements.levelDisplay.textContent = index + 1;
+        
+        // --- 1. SETUP IMAGE HANDLERS FIRST (Prevent Stuck Spinner) ---
         elements.imageLoader.style.display = 'block';
         elements.gameImage.style.opacity = '0';
-        elements.gameImage.src = level.imageUrl;
-        elements.hintText.classList.add('hidden');
-        elements.hintText.textContent = level.hint || "Không có gợi ý.";
-        
-        // Setup Slots
-        setupDropSlots(level.answer);
-
-        // Render Options (Shuffled)
-        elements.optionsContainer.innerHTML = '';
-        // If options are characters that make up the word, good. 
-        // We trust the admin provided sufficient options.
-        const shuffledOptions = [...level.options].sort(() => Math.random() - 0.5);
-
-        shuffledOptions.forEach((opt, idx) => {
-            const el = createDraggable(opt, idx);
-            elements.optionsContainer.appendChild(el);
-        });
-
-        // Image Load Handler
         elements.gameImage.onload = () => {
             elements.imageLoader.style.display = 'none';
             elements.gameImage.style.opacity = '1';
@@ -107,7 +136,77 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.gameImage.onerror = () => {
              elements.imageLoader.style.display = 'none';
              showToast('Không tải được hình ảnh', 'error');
+        };
+        // Set src AFTER handlers
+        elements.gameImage.src = level.imageUrl;
+
+        elements.hintText.classList.add('hidden');
+        elements.hintText.textContent = level.hint || "Không có gợi ý.";
+        
+        // --- 2. SETUP SLOTS ---
+        setupDropSlots(level.answer);
+
+        // --- 3. RENDER OPTIONS ---
+        elements.optionsContainer.innerHTML = '';
+        const shuffledOptions = [...level.options].sort(() => Math.random() - 0.5);
+
+        shuffledOptions.forEach((opt, idx) => {
+            const el = createDraggable(opt, idx);
+            elements.optionsContainer.appendChild(el);
+        });
+
+        // --- 4. START TIMER ---
+        // Ensure element exists
+        if (!elements.timerDisplay) elements.timerDisplay = document.getElementById('timer-display');
+        
+        if (elements.timerDisplay) {
+             const limit = (level.timeLimit !== undefined && level.timeLimit !== null) ? level.timeLimit : 60;
+             startTimer(limit);
+        } else {
+            console.error("Timer Display Element Not Found!");
         }
+    }
+
+    function startTimer(seconds) {
+        if(timerInterval) clearInterval(timerInterval);
+        if (!elements.timerDisplay) return; // Safety
+
+        let timeLeft = seconds;
+        elements.timerDisplay.innerText = timeLeft;
+        elements.timerDisplay.classList.remove('blink-red');
+        
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            elements.timerDisplay.innerText = timeLeft;
+            
+            if (timeLeft <= 5) {
+                elements.timerDisplay.classList.add('blink-red');
+            }
+            
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                handleTimeOut();
+            }
+        }, 1000);
+    }
+
+    function stopTimer() {
+        if(timerInterval) clearInterval(timerInterval);
+        elements.timerDisplay.classList.remove('blink-red');
+    }
+
+    function handleTimeOut() {
+        showToast('Hết giờ!', 'error');
+        // Auto skip or fail logic? Let's just show correct answer or move next.
+        // Simple: Mark as Wrong visually then allow manual "Next" or auto.
+        // Let's force move next after delay.
+        document.querySelectorAll('.answer-slot').forEach(el => el.classList.add('wrong-reveal'));
+        elements.dropZone.classList.add('wrong');
+        setTimeout(() => {
+             elements.dropZone.classList.remove('wrong');
+             document.querySelectorAll('.answer-slot').forEach(el => el.classList.remove('wrong-reveal'));
+             advanceToNextLevel(); // Force next
+        }, 2000);
     }
 
     function setupDropSlots(answer) {
@@ -268,7 +367,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // It is full
-        if (constructedAnswer === currentLevel.answer) {
+        console.log(`Checking: '${constructedAnswer}' vs '${currentLevel.answer}'`);
+        
+        const cleanConstructed = constructedAnswer.trim().toUpperCase();
+        const cleanAnswer = (currentLevel.answer || "").trim().toUpperCase();
+
+        if (cleanConstructed === cleanAnswer) {
              handleVictory();
         } else {
              handleWrong();
@@ -276,6 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleVictory() {
+        stopTimer();
         // Visuals
         document.querySelectorAll('.answer-slot').forEach(el => el.classList.add('correct-reveal'));
         
@@ -311,17 +416,62 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function showEndGame() {
+    async function showEndGame() {
         elements.finalScoreValue.textContent = state.score;
         elements.endGameModal.classList.remove('hidden');
+        
+        try {
+            await fetch(`/api/rooms/${state.roomId}/finish?playerId=${state.playerId}&score=${state.score}`, {method:'POST'});
+            
+            // Fetch Leaderboard
+            const res = await fetch(`/api/rooms/${state.roomId}/players`);
+            const players = await res.json();
+             // Sort by Score Desc
+             players.sort((a, b) => b.score - a.score);
+             
+             // Render Leaderboard
+             const leaderboardHtml = `
+                <div style="margin-top:20px; max-height:200px; overflow-y:auto; width:100%;">
+                    <h3 style="margin-bottom:10px; color:var(--accent-color);">Bảng Xếp Hạng</h3>
+                    <table style="width:100%; border-collapse:collapse; color:white;">
+                        ${players.map((p, i) => {
+                            let rankIcon = `#${i+1}`;
+                            if(i===0) rankIcon = '🥇';
+                            if(i===1) rankIcon = '🥈';
+                            if(i===2) rankIcon = '🥉';
+                            
+                            const isMe = p.id === state.playerId ? 'background:rgba(255,255,255,0.1);' : '';
+                            
+                            return `
+                                <tr style="${isMe} border-bottom:1px solid rgba(255,255,255,0.1);">
+                                    <td style="padding:8px; font-size:1.2rem;">${rankIcon}</td>
+                                    <td style="padding:8px; text-align:left;">${p.name || 'Unknown'}</td>
+                                    <td style="padding:8px; font-weight:bold; color:#ffd700;">${p.score}</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </table>
+                </div>
+             `;
+             
+             // Inject after score
+             const scoreEl = document.querySelector('.final-score');
+             if(scoreEl) {
+                 const existingLb = document.getElementById('leaderboard-container');
+                 if(existingLb) existingLb.remove();
+                 
+                 const div = document.createElement('div');
+                 div.id = 'leaderboard-container';
+                 div.innerHTML = leaderboardHtml;
+                 scoreEl.insertAdjacentElement('afterend', div);
+             }
+
+        } catch(e) { console.error(e); }
     }
 
     function restartGame() {
-        elements.endGameModal.classList.add('hidden');
-        state.score = 0;
-        elements.scoreDisplay.textContent = '0';
-        // Reuse fetchLevels so logic remains consistent
-        fetchLevels(); 
+        // This is actually "Back to Menu" now based on HTML changes
+        window.location.href='/client/rooms.html';
     }
 
     // --- Helpers ---

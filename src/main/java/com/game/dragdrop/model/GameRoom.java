@@ -16,6 +16,8 @@ public class GameRoom {
 
     private Boolean isActive = true;
 
+    private String status = "WAITING";
+
     public GameRoom() {
     }
 
@@ -54,5 +56,13 @@ public class GameRoom {
 
     public void setActive(Boolean active) {
         isActive = active;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

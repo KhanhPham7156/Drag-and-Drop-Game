@@ -232,7 +232,18 @@ td {
 }
 
 .btn-edit { color: var(--primary-color); cursor: pointer; background:none; border:none; font-weight: 600; }
-.btn-delete { color: var(--danger); cursor: pointer; background:none; border:none; font-weight: 600; }
+.btn-edit { color: var(--primary-color); cursor: pointer; background:none; border:none; font-weight: 600; }
+.btn-delete { 
+    background-color: var(--danger);
+    color: white; 
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+.btn-delete:hover { opacity: 0.8; }
 
 /* Utils */
 .hidden { display: none !important; }

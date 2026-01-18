@@ -15,12 +15,25 @@
     <div class="background-orb orb-1"></div>
     <div class="background-orb orb-2"></div>
 
-    <div class="game-container">
+    <!-- PENDING OVERLAY -->
+    <div id="pending-overlay" class="modal-overlay" style="display:flex; flex-direction:column; gap:20px; z-index:9999;">
+        <h1 style="color:white; font-size:2rem;">Chờ chủ phòng bắt đầu...</h1>
+        <div class="loading-spinner" style="position:relative; font-size:3rem; color:var(--accent-color);">
+             <i class="fa-solid fa-spinner fa-spin"></i>
+        </div>
+        <button onclick="window.location.href='/client/rooms.html'" class="primary-btn" style="margin-top:20px;">Quay lại</button>
+    </div>
+
+    <div class="game-container hidden" id="game-container">
         <!-- Header -->
         <header class="game-header">
             <div class="level-indicator">
                 <span class="label">LEVEL</span>
                 <span class="value" id="level-display">1</span>
+            </div>
+            <div class="level-indicator" style="margin-left: 20px;">
+                <span class="label"><i class="fa-regular fa-clock"></i></span>
+                <span class="value" id="timer-display">--</span>
             </div>
             <h1 class="logo">BrainDrag</h1>
             <div class="score-indicator">
@@ -86,7 +99,10 @@
                 <h2>Hoàn thành!</h2>
                 <p>Bạn đã vượt qua tất cả các màn chơi.</p>
                 <p class="final-score">Điểm số: <span id="final-score-value"></span></p>
-                <button id="restart-btn" class="primary-btn">Chơi lại <i class="fa-solid fa-rotate-right"></i></button>
+                <div style="display:flex; gap:10px; justify-content:center;">
+                    <!-- <button id="restart-btn" class="primary-btn">Chơi lại <i class="fa-solid fa-rotate-right"></i></button> -->
+                    <button onclick="window.location.href='/client/rooms.html'" class="primary-btn">Quay lại Menu</button>
+                </div>
             </div>
         </div>
     </div>

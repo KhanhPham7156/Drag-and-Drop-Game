@@ -54,14 +54,39 @@
 </head>
 <body>
     <a href="/" class="back-btn">← Quay lại</a>
-    <div class="rooms-container">
-        <h1>Danh Sách Phòng Chơi</h1>
+    <div class="rooms-container hidden" id="rooms-view">
+        <h1 style="color:white;text-align:center;">Xin chào, <span id="player-name-display"></span></h1>
+        <h2 style="text-align:center; margin-bottom: 20px;">Danh Sách Phòng Chơi</h2>
         <div id="room-list">
             <p style="text-align:center; color: #aaa;">Đang tải danh sách phòng...</p>
         </div>
     </div>
 
+    <div id="name-modal" style="position:fixed; inset:0; background:#0f172a; display:flex; justify-content:center; align-items:center; z-index:100;">
+        <div style="background:rgba(30,41,59,0.9); padding:40px; border-radius:16px; width:90%; max-width:400px; text-align:center; border:1px solid rgba(255,255,255,0.1);">
+            <h2 style="color:white; margin-bottom:20px;">Nhập Tên Của Bạn</h2>
+            <input type="text" id="player-name-input" placeholder="Tên hiển thị..." style="width:100%; padding:12px; margin-bottom:20px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.2); color:white; border-radius:8px;">
+            <button onclick="saveName()" style="width:100%; padding:12px; background:#6366f1; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">Tiếp Tục</button>
+        </div>
+    </div>
+
     <script>
+        // Check for existing name
+        const storedName = sessionStorage.getItem('playerName');
+        if (storedName) {
+            document.getElementById('name-modal').classList.add('hidden');
+            document.getElementById('rooms-view').classList.remove('hidden');
+            document.getElementById('player-name-display').innerText = storedName;
+            loadRooms();
+        }
+
+        function saveName() {
+            const name = document.getElementById('player-name-input').value.trim();
+            if (!name) return alert('Vui lòng nhập tên!');
+            sessionStorage.setItem('playerName', name);
+            window.location.reload();
+        }
+
         async function loadRooms() {
             try {
                 const res = await fetch('/api/rooms/all');
@@ -74,16 +99,27 @@
                 }
 
                 rooms.forEach(room => {
+                    const status = room.status || 'WAITING';
+                    let statusText = '● Đang chờ';
+                    let statusColor = '#ff9800'; // Orange
+                    
+                    if (status === 'PLAYING') { statusText = '● Đang chơi'; statusColor = '#00e676'; } // Green (but closed for join)
+                    if (status === 'FINISHED') { statusText = '● Kết thúc'; statusColor = 'red'; }
+
                     const div = document.createElement('div');
                     div.className = 'room-card';
                     div.innerHTML = `
                         <div>
                             <div class="room-name">${room.name}</div>
-                            <div class="room-status">● Đang hoạt động</div>
+                            <div class="room-status" style="color:${statusColor}">${statusText}</div>
                         </div>
-                        <button class="join-btn">Vào Chơi</button>
+                        <button class="join-btn" ${status !== 'WAITING' ? 'style="opacity:0.5;cursor:not-allowed"' : ''}>Vào Chơi</button>
                     `;
                     div.onclick = () => {
+                        if (status !== 'WAITING') {
+                            alert('Phòng đang chơi hoặc đã kết thúc. Không thể tham gia.');
+                            return;
+                        }
                         window.location.href = `/client/index.html?roomId=${room.id}`;
                     };
                     container.appendChild(div);
@@ -92,7 +128,6 @@
                 console.error(e);
             }
         }
-        loadRooms();
     </script>
 </body>
 </html>

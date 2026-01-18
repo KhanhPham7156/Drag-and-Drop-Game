@@ -22,7 +22,8 @@ public class AdminController {
     @PostMapping("/level")
     public GameLevel createLevel(@RequestParam("image") MultipartFile file, @RequestParam("answer") String answer,
             @RequestParam("hint") String hint, @RequestParam("levelOrder") Integer levelOrder,
-            @RequestParam(value = "roomId", required = false) Long roomId) {
+            @RequestParam(value = "roomId", required = false) Long roomId,
+            @RequestParam(value = "timeLimit", required = false) Integer timeLimit) {
         String imageUrl = storageService.uploadFile(file);
         GameLevel level = new GameLevel();
         level.setImageUrl(imageUrl);
@@ -30,6 +31,7 @@ public class AdminController {
         level.setHint(hint);
         level.setLevelOrder(levelOrder);
         level.setRoomId(roomId);
+        level.setTimeLimit(timeLimit != null ? timeLimit : 60); // Default 60s
         level.setOptions(answer.chars().mapToObj(c -> String.valueOf((char) c)).collect(Collectors.toList()));
         return levelRepository.save(level);
     }
@@ -46,7 +48,8 @@ public class AdminController {
             @RequestParam(value = "image", required = false) MultipartFile file,
             @RequestParam("answer") String answer, @RequestParam("hint") String hint,
             @RequestParam("levelOrder") Integer levelOrder,
-            @RequestParam(value = "roomId", required = false) Long roomId) {
+            @RequestParam(value = "roomId", required = false) Long roomId,
+            @RequestParam(value = "timeLimit", required = false) Integer timeLimit) {
         GameLevel level = levelRepository.findById(id).orElseThrow(() -> new RuntimeException("Level not found"));
 
         if (file != null && !file.isEmpty()) {
@@ -59,6 +62,8 @@ public class AdminController {
         level.setHint(hint);
         level.setLevelOrder(levelOrder);
         level.setRoomId(roomId);
+        if (timeLimit != null)
+            level.setTimeLimit(timeLimit);
         level.setOptions(answer.chars().mapToObj(c -> String.valueOf((char) c)).collect(Collectors.toList()));
         return levelRepository.save(level);
     }

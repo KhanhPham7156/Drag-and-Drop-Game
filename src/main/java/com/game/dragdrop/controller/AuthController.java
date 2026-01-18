@@ -61,26 +61,35 @@ public class AuthController {
         return Collections.singletonMap("message", "Logged out");
     }
 
-    @GetMapping("/pending")
-    public List<User> getPendingUsers(HttpSession session) {
+    @GetMapping("/users")
+    public List<User> getAllUsers(HttpSession session) {
         String role = (String) session.getAttribute("role");
         if (!"ROOT".equals(role)) {
             throw new RuntimeException("Unauthorized");
         }
-        return userRepository.findByIsApprovedFalse();
+        return userRepository.findAll();
+    }
+
+    @DeleteMapping("/user/{id}")
+    public void deleteUser(@PathVariable Long id, HttpSession session) {
+        String role = (String) session.getAttribute("role");
+        if (!"ROOT".equals(role)) {
+            throw new RuntimeException("Unauthorized");
+        }
+        userRepository.deleteById(id);
     }
 
     @PostMapping("/approve/{id}")
     public Map<String, String> approveUser(@PathVariable Long id, HttpSession session) {
         String role = (String) session.getAttribute("role");
         if (!"ROOT".equals(role)) {
-             return Collections.singletonMap("error", "Unauthorized");
+            return Collections.singletonMap("error", "Unauthorized");
         }
-        
+
         User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
         user.setApproved(true);
         userRepository.save(user);
-        
+
         return Collections.singletonMap("message", "User approved");
     }
 

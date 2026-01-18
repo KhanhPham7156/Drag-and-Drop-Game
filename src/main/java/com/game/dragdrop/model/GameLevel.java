@@ -19,6 +19,9 @@ public class GameLevel {
 
     private Integer levelOrder;
 
+    // Time limit in seconds
+    private Integer timeLimit;
+
     @Column(name = "room_id")
     private Long roomId;
 
@@ -68,6 +71,14 @@ public class GameLevel {
 
     public void setLevelOrder(Integer levelOrder) {
         this.levelOrder = levelOrder;
+    }
+
+    public Integer getTimeLimit() {
+        return timeLimit;
+    }
+
+    public void setTimeLimit(Integer timeLimit) {
+        this.timeLimit = timeLimit;
     }
 
     public Long getRoomId() {

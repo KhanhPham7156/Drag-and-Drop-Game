@@ -78,11 +78,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${level.levelOrder}</td>
-                    <td><img src="${level.imageUrl}" class="img-thumbnail"></td>
+                    <td><img src="${level.imageUrl}" class="img-thumbnail" style="max-height:50px;"></td>
                     <td><strong>${level.answer}</strong></td>
                     <td>${level.hint || ''}</td>
+                    <td>${level.timeLimit || 60}s</td>
                     <td class="actions">
                         <div class="actions-wrapper">
+                            <!-- TODO: Edit Function could go here -->
                             <button class="btn-delete" onclick="deleteLevel(${level.id})">Xóa</button>
                         </div>
                     </td>
@@ -115,6 +117,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         formData.append('answer', document.getElementById('answer').value);
         formData.append('hint', document.getElementById('hint').value);
         formData.append('levelOrder', document.getElementById('levelOrder').value);
+        formData.append('timeLimit', document.getElementById('timeLimit').value || 60);
         
         if (currentRoomId) {
             formData.append('roomId', currentRoomId);
@@ -167,13 +170,25 @@ document.addEventListener('DOMContentLoaded', async () => {
             const rooms = await res.json();
             const tbody = document.getElementById('room-table-body');
             tbody.innerHTML = '';
-            rooms.forEach(r => {
+            rooms.forEach((r, index) => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${r.id}</td><td>${r.name}</td>
-                                <td><span style="color:${r.active?'#00e676':'red'}">${r.active?'Active':'Inactive'}</span></td>
+                let statusLabel = r.status || 'WAITING';
+                if(statusLabel === 'WAITING') statusLabel = '<span style="color:#ff9800">Đang chờ</span>';
+                if(statusLabel === 'PLAYING') statusLabel = '<span style="color:#00e676">Đang chơi</span>';
+                if(statusLabel === 'FINISHED') statusLabel = '<span style="color:red">Kết thúc</span>';
+                
+                let startBtn = '';
+                if(r.status === 'WAITING' || !r.status) {
+                    startBtn = `<button class="btn-primary" onclick="startRoom(${r.id})" style="padding:5px 10px; font-size:0.8rem; background-color:#10b981;">Bắt đầu</button>`;
+                }
+
+                tr.innerHTML = `<td>${index + 1}</td><td>${r.name}</td>
+                                <td>${statusLabel}</td>
                                 <td>
+                                    ${startBtn}
+                                    <button class="btn-primary" onclick="openClientsModal(${r.id})" style="padding:5px 10px; font-size:0.8rem; background-color:#3b82f6;">QL Clients</button>
                                     <button class="btn-primary" onclick="selectRoom(${r.id}, '${r.name}')" style="padding:5px 10px; font-size:0.8rem">Cấu hình</button>
-                                    <button class="btn-delete" onclick="deleteRoom(${r.id})">Xóa</button>
+                                    <button onclick="deleteRoom(${r.id})" style="padding:5px 10px; font-size:0.8rem; background-color: #ef4444; color: white; border:none; border-radius: 0.5rem; font-weight: 600; cursor: pointer;">Xóa</button>
                                 </td>`;
                 tbody.appendChild(tr);
             });
@@ -182,22 +197,46 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
     // ================= USER APPROVAL LOGIC (ROOT) =================
+    // ================= USER APPROVAL LOGIC (ROOT) =================
     async function loadPendingUsers() {
         try {
-            const res = await fetch('/api/auth/pending');
+            const res = await fetch('/api/auth/users'); // Now fetches all users
             const users = await res.json();
             const tbody = document.getElementById('user-table-body');
             tbody.innerHTML = '';
             
             if (users.error) return; // Not authorized
 
-            users.forEach(u => {
+            users.forEach((u, index) => {
+                const isApproved = u.approved === true; // Note: key might be 'approved' or 'isApproved' depending on JSON serialization. Let's rely on backend DTO or check standard Jackson.
+                // Jackson typically serializes boolean isApproved as "approved" unless configured otherwise, or "isApproved" if field name.
+                // Looking at User.java: private Boolean isApproved; Getter: isApproved(). 
+                // Jackson default for Boolean object getter 'isApproved()' -> 'approved'.
+                // Jackson default for boolean primitive getter 'isApproved()' -> 'approved'.
+                // BUT if field is 'isApproved', sometimes it's mapped as 'isApproved'. 
+                // Let's check the previous `loadPendingUsers` code used `u.username`... 
+                // We will handle strictly.
+                
+                const approved = u.approved || u.isApproved; 
+                
                 const tr = document.createElement('tr');
+                let actions = '';
+                let statusBadge = '';
+                
+                if (!approved) {
+                    statusBadge = '<span style="color:#ff9800">Pending</span>';
+                    actions = `<button class="btn-primary" onclick="approveUser(${u.id})">Duyệt</button>
+                               <button class="btn-delete" onclick="deleteUser(${u.id})">Xóa</button>`;
+                } else {
+                     statusBadge = '<span style="color:#00e676">Approved</span>';
+                     actions = `<button class="btn-delete" onclick="deleteUser(${u.id})">Xóa</button>`;
+                }
+
                 tr.innerHTML = `
-                    <td>${u.id}</td>
+                    <td>${index + 1}</td>
                     <td>${u.username}</td>
-                    <td><span style="color:#ff9800">Pending</span></td>
-                    <td><button class="btn-primary" onclick="approveUser(${u.id})">Duyệt</button></td>
+                    <td>${statusBadge}</td>
+                    <td>${actions}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -215,6 +254,72 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch(e) { console.error(e); }
     }
 
+    window.deleteUser = async (id) => {
+        if(!confirm('Xóa người dùng này?')) return;
+        try {
+            const res = await fetch(`/api/auth/user/${id}`, {method:'DELETE'});
+            if (res.ok) {
+                showToast('Đã xóa!');
+                loadPendingUsers();
+            }
+        } catch(e) { console.error(e); }
+    }
+
+
+    // ================= CLIENT MANAGEMENT LOGIC =================
+    let viewingRoomId = null;
+
+    window.openClientsModal = (roomId) => {
+        viewingRoomId = roomId;
+        document.getElementById('clients-modal').style.display = 'flex';
+        document.querySelector('#clients-modal').classList.remove('hidden');
+        refreshClients();
+    };
+
+    window.closeClientsModal = () => {
+        viewingRoomId = null;
+        document.getElementById('clients-modal').style.display = 'none';
+        document.querySelector('#clients-modal').classList.add('hidden');
+    };
+
+    window.refreshClients = async () => {
+        if (!viewingRoomId) return;
+        try {
+            const res = await fetch(`/api/rooms/${viewingRoomId}/players`);
+            const players = await res.json();
+            
+            // Sort by Score Desc
+            players.sort((a, b) => b.score - a.score);
+
+            const tbody = document.getElementById('clients-table-body');
+            tbody.innerHTML = '';
+            
+            players.forEach((p, idx) => {
+                const tr = document.createElement('tr');
+                tr.style.backgroundColor = "white"; // Matches screenshot
+                tr.style.color = "#1e293b"; // Dark text
+                tr.style.borderBottom = "1px solid #e2e8f0";
+
+                const status = p.finished ? '<span style="color:#10b981; font-weight:600;">Đã xong</span>' : '<span style="color:#f59e0b; font-weight:600;">Đang chơi</span>';
+                
+                tr.innerHTML = `
+                    <td style="padding:10px;">${idx + 1}</td>
+                    <td style="padding:10px; font-weight:500;">${p.name || 'Unknown'}</td>
+                    <td style="padding:10px; font-weight:700; color:#eab308;">${p.score}</td>
+                    <td style="padding:10px;">${status}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } catch(e) { console.error(e); }
+    };
+    
+    // Auto refresh clients if modal is open (optional)
+    setInterval(() => {
+        if (!document.getElementById('clients-modal').classList.contains('hidden')) {
+            refreshClients();
+        }
+    }, 500);
+
 
     // ================= SHARED UTILS =================
     window.deleteLevel = async (id) => {
@@ -230,6 +335,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
+    window.startRoom = async (id) => {
+        if(!confirm('Bắt đầu trò chơi cho phòng này?')) return;
+        try {
+            const res = await fetch(`/api/rooms/${id}/start`, {method:'POST'});
+            if(res.ok) {
+                showToast('Đã bắt đầu trò chơi!');
+                loadRooms();
+            }
+        } catch(e) { console.error(e); }
+    };
+    
     window.deleteRoom = async (id) => {
         if (!confirm('Xóa phòng này?')) return;
         try {
