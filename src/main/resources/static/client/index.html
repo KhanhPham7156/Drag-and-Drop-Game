@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drag & Drop Adventure</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <div class="background-orb orb-1"></div>
+    <div class="background-orb orb-2"></div>
+
+    <div class="game-container">
+        <!-- Header -->
+        <header class="game-header">
+            <div class="level-indicator">
+                <span class="label">LEVEL</span>
+                <span class="value" id="level-display">1</span>
+            </div>
+            <h1 class="logo">BrainDrag</h1>
+            <div class="score-indicator">
+                <i class="fa-solid fa-star"></i>
+                <span class="value" id="score-display">0</span>
+            </div>
+        </header>
+
+        <!-- Game Area -->
+        <main class="game-board">
+            
+            <div class="image-section glass-panel">
+                <div class="image-wrapper">
+                    <img id="game-image" src="" alt="Question Image" draggable="false">
+                    <div class="loading-spinner" id="image-loader">
+                        <i class="fa-solid fa-circle-notch fa-spin"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="interaction-section">
+                
+                <div class="drop-zone glass-panel" id="drop-zone">
+                    <div class="drop-placeholder">
+                        <i class="fa-regular fa-hand-point-down"></i>
+                        <p>Kéo đáp án vào đây</p>
+                    </div>
+                </div>
+
+                <div class="options-container" id="options-container">
+                    <!-- Options will be injected here -->
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Hint / Feedback -->
+        <div class="feedback-area">
+            <button id="hint-btn" class="icon-btn tooltipped" data-tooltip="Xem gợi ý">
+                <i class="fa-regular fa-lightbulb"></i>
+            </button>
+            <div id="hint-text" class="hint-bubble hidden"></div>
+        </div>
+
+    </div>
+
+    <!-- Modals -->
+    <div class="modal-overlay hidden" id="victory-modal">
+        <div class="modal glass-panel">
+            <div class="modal-content">
+                <i class="fa-solid fa-trophy modal-icon"></i>
+                <h2>Tuyệt vời!</h2>
+                <p>Bạn đã trả lời đúng.</p>
+                <button id="next-level-btn" class="primary-btn">Màn tiếp theo <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="end-game-modal">
+        <div class="modal glass-panel">
+            <div class="modal-content">
+                <i class="fa-solid fa-crown modal-icon"></i>
+                <h2>Hoàn thành!</h2>
+                <p>Bạn đã vượt qua tất cả các màn chơi.</p>
+                <p class="final-score">Điểm số: <span id="final-score-value"></span></p>
+                <button id="restart-btn" class="primary-btn">Chơi lại <i class="fa-solid fa-rotate-right"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast/Notification -->
+    <div id="toast" class="toast hidden"></div>
+
+    <script src="main.js"></script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="admin-container">
+        <aside class="sidebar">
+            <h2 class="logo">Admin Dashboard</h2>
+            <nav>
+                <a href="#dashboard" class="active">Màn chơi</a>
+                <a href="#players">Người chơi</a>
+                <a href="#settings">Cài đặt</a>
+            </nav>
+        </aside>
+
+        <main class="content">
+            <header>
+                <h1>Quản lý Màn chơi</h1>
+                <button class="btn-primary" id="btn-add-level"> + Thêm màn mới </button>
+            </header>
+
+            <!-- Form Thêm/Sửa (Ban đầu ẩn) -->
+            <section id="level-form-section" class="form-card hidden">
+                <div class="card-header">
+                    <h3 id="form-title">Thêm Màn Chơi Mới</h3>
+                </div>
+                <form id="level-form" enctype="multipart/form-data">
+                    <input type="hidden" id="level-id">
+                    
+                    <div class="form-group">
+                        <label>Ảnh hiển thị</label>
+                        <div class="image-upload-wrapper">
+                            <input type="file" id="image-input" name="image" accept="image/*" required>
+                            <div id="image-preview" class="preview-box">
+                                <span>Nhấn để chọn ảnh</span>
+                                <img id="img-preview-tag" src="#" alt="Preview" class="hidden">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Đáp án chính xác</label>
+                            <input type="text" id="answer" name="answer" placeholder="Vd: APPLE" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Thứ tự màn</label>
+                            <input type="number" id="levelOrder" name="levelOrder" placeholder="1" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Gợi ý (Hint)</label>
+                        <textarea id="hint" name="hint" rows="2" placeholder="Nhập gợi ý cho người chơi..."></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" id="btn-cancel">Hủy</button>
+                        <button type="submit" class="btn-primary">Lưu màn chơi</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Danh sách các màn chơi hiện có -->
+            <section class="list-section">
+                <div class="card-header">
+                    <h3>Danh sách các màn</h3>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Thứ tự</th>
+                                <th>Ảnh</th>
+                                <th>Đáp án</th>
+                                <th>Gợi ý</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="level-table-body">
+                            <!-- Dữ liệu sẽ đổ vào đây bằng JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Thông báo (Toast) -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="main.js"></script>
+</body>
+</html>

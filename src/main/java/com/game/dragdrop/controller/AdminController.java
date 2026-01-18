@@ -12,7 +12,7 @@ import com.game.dragdrop.repository.LevelRepository;
 import com.game.dragdrop.service.StorageService;
 
 @RestController
-@RequestMapping("/api/admin")
+@RequestMapping("/api/management")
 public class AdminController {
     @Autowired
     private LevelRepository levelRepository;
