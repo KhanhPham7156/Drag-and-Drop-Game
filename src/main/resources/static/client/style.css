@@ -108,6 +108,7 @@ body {
     font-size: 1.5rem;
     background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     letter-spacing: 1px;
     text-transform: uppercase;
@@ -425,6 +426,7 @@ body {
     margin-bottom: 20px;
     background: linear-gradient(to bottom right, #ffd700, #ff8c00);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 

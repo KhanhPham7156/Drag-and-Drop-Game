@@ -9,7 +9,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        document.getElementById('current-username').innerText = authData.user;
+        const usernameEl = document.getElementById('current-username');
+        if (usernameEl) {
+            usernameEl.innerText = authData.user;
+        }
         
         // Show ROOT-only tabs
         if (authData.role === 'ROOT') {
