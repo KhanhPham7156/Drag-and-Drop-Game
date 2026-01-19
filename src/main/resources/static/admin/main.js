@@ -53,10 +53,26 @@ document.addEventListener('DOMContentLoaded', async () => {
             tabs.forEach(t => t.classList.add('hidden'));
             document.getElementById(targetId).classList.remove('hidden');
 
+            // Close sidebar on mobile if open
+            document.querySelector('.sidebar').classList.remove('active');
+
             // Load Data if needed
             if (btn.dataset.tab === 'rooms') loadRooms();
             if (btn.dataset.tab === 'users') loadPendingUsers();
         });
+    });
+
+    // Mobile Sidebar Toggle
+    const menuToggle = document.getElementById('menu-toggle');
+    if (menuToggle) {
+        menuToggle.addEventListener('click', () => {
+            document.querySelector('.sidebar').classList.toggle('active');
+        });
+    }
+
+    // Room Create Enter Key
+    document.getElementById('new-room-name').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') createRoom();
     });
 
 

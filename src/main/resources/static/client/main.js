@@ -268,8 +268,8 @@ document.addEventListener('DOMContentLoaded', () => {
         div.setAttribute('draggable', 'true');
         div.id = `opt-${id}`;
         
+        // Desktop Drag Events
         div.addEventListener('dragstart', (e) => {
-            // Send both text and the element ID so we can mark it as used
             const payload = JSON.stringify({ text: text, elementId: div.id });
             e.dataTransfer.setData('application/json', payload);
             div.classList.add('dragging');
@@ -279,6 +279,70 @@ document.addEventListener('DOMContentLoaded', () => {
         div.addEventListener('dragend', () => {
             div.classList.remove('dragging');
             state.isDragging = false;
+        });
+
+        // Mobile Touch Events
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let originalPos = { x: 0, y: 0 };
+        
+        div.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Stop scrolling
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+            
+            // Visuals
+            div.classList.add('dragging');
+            div.style.position = 'fixed';
+            div.style.zIndex = '9999';
+            // Center under finger approx
+            const rect = div.getBoundingClientRect();
+            div.style.left = (touchStartX - rect.width/2) + 'px';
+            div.style.top = (touchStartY - rect.height/2) + 'px';
+            
+            state.isDragging = true;
+        }, {passive: false});
+
+        div.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = div.getBoundingClientRect();
+            div.style.left = (touch.clientX - rect.width/2) + 'px';
+            div.style.top = (touch.clientY - rect.height/2) + 'px';
+        }, {passive: false});
+
+        div.addEventListener('touchend', (e) => {
+            const touch = e.changedTouches[0];
+            
+            // Hide self to find element underneath
+            div.style.display = 'none';
+            const target = document.elementFromPoint(touch.clientX, touch.clientY);
+            div.style.display = ''; // Restore
+            
+            // Cleanup visuals
+            div.classList.remove('dragging');
+            div.style.position = '';
+            div.style.zIndex = '';
+            div.style.left = '';
+            div.style.top = '';
+            state.isDragging = false;
+            
+            // Logic
+            if (target) {
+                // Check Drop Target
+                const slot = target.closest('.answer-slot');
+                const zone = target.closest('.drop-zone');
+                
+                const data = { text: text, elementId: div.id };
+                
+                if (slot) {
+                    const idx = parseInt(slot.dataset.index);
+                    handleDropOnSlot(idx, data);
+                } else if (zone) {
+                    handleDropAnywhere(data);
+                }
+            }
         });
 
         return div;

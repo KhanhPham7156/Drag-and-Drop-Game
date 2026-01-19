@@ -185,6 +185,31 @@
                 }
             } catch (e) { console.error(e); alert('Error'); }
         }
+
+        // Add Enter Key Support
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    // Check which form is visible
+                    const loginHidden = document.getElementById('login-form').classList.contains('hidden');
+                    if (loginHidden) {
+                        handleRegister();
+                    } else {
+                        handleLogin();
+                    }
+                }
+            });
+        });
     </script>
+    <style>
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 2rem;
+                width: 90%;
+            }
+            h2 { font-size: 1.5rem; }
+            .orb-1, .orb-2 { display: none; } /* Hide heavy orbs on mobile */
+        }
+    </style>
 </body>
 </html>
