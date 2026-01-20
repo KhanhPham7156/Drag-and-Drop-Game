@@ -148,8 +148,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- 3. RENDER OPTIONS ---
         elements.optionsContainer.innerHTML = '';
-        // Filter out spaces from options
-        const validOptions = level.options.filter(opt => opt && opt.trim() !== '');
+        // Filter out empty, null, undefined, and whitespace-only options
+        const validOptions = (level.options || []).filter(opt => {
+            if (!opt) return false;
+            const trimmed = String(opt).trim();
+            return trimmed.length > 0;
+        });
+        
+        console.log('Valid options after filter:', validOptions); // Debug log
+        
         const shuffledOptions = [...validOptions].sort(() => Math.random() - 0.5);
 
         shuffledOptions.forEach((opt, idx) => {
