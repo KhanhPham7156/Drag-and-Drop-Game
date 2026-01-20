@@ -119,6 +119,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadLevel(index) {
         state.currentLevelIndex = index;
         state.filledSlots = [];
+        state.cleanAnswer = '';
+        state.totalSlots = 0;
+        state.wordStructure = [];
         const level = state.levels[index];
 
         if (!level) return;
@@ -227,15 +230,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const slotsArea = document.createElement('div');
         slotsArea.className = 'answer-slots-area';
         
-        // Determine sizing class based on answer complexity
-        const words = answer.split(' ').filter(w => w.length > 0);
+        // Normalize answer: split by spaces/special chars to get words
+        // Only keep alphanumeric characters within each word
+        const rawWords = answer.split(/\s+/);
+        const words = rawWords
+            .map(w => w.replace(/[^A-Za-z0-9]/g, '')) // Keep only letters/numbers
+            .filter(w => w.length > 0);
+        
+        console.log('Processed words:', words); // Debug log
+        
         const wordCount = words.length;
         const maxWordLength = Math.max(...words.map(w => w.length));
         
-        // Size logic: 
-        // - compact: more than 5 words OR longest word > 6 chars
-        // - medium: 4-5 words OR longest word 5-6 chars
-        // - large: 1-3 words AND longest word <= 4 chars
+        // Size logic based on word count and max word length
         if (wordCount > 5 || maxWordLength > 6) {
             slotsArea.classList.add('size-compact');
         } else if (wordCount >= 4 || maxWordLength >= 5) {
@@ -244,68 +251,67 @@ document.addEventListener('DOMContentLoaded', () => {
             slotsArea.classList.add('size-large');
         }
         
-        let currentWordRow = document.createElement('div');
-        currentWordRow.className = 'word-row';
-        slotsArea.appendChild(currentWordRow);
-
-        const len = answer.length;
+        // Build a clean answer string for validation
+        // Format: "WORD1 WORD2 WORD3" with single spaces
+        state.cleanAnswer = words.join(' ').toUpperCase();
+        console.log('Clean answer for validation:', state.cleanAnswer);
         
-        for (let i = 0; i < len; i++) {
-            const char = answer[i];
+        let globalSlotIndex = 0;
+        
+        words.forEach((word, wordIndex) => {
+            const wordRow = document.createElement('div');
+            wordRow.className = 'word-row';
             
-            if (char === ' ') {
-                // Space -> Start new row
-                // 1. Auto-fill state for the space
-                state.filledSlots[i] = { text: ' ', isSpace: true };
+            // Create slot for each character in the word
+            for (let charIndex = 0; charIndex < word.length; charIndex++) {
+                const slot = document.createElement('div');
+                slot.className = 'answer-slot';
+                slot.dataset.index = globalSlotIndex;
+                slot.dataset.wordIndex = wordIndex;
+                slot.dataset.charIndex = charIndex;
                 
-                // 2. Only create new row if the current one isn't empty (avoids double rows for double spaces)
-                // OR if we want strict mapping 1-1, just close current row.
-                // Let's ensure we close the current row and start a new one.
-                if (currentWordRow.childElementCount > 0) {
-                    currentWordRow = document.createElement('div');
-                    currentWordRow.className = 'word-row';
-                    slotsArea.appendChild(currentWordRow);
-                }
-                continue;
+                // Interaction Events
+                const slotIdx = globalSlotIndex; // Capture for closure
+                slot.addEventListener('click', () => clearSlot(slotIdx));
+                
+                slot.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    if (!state.filledSlots[slotIdx]) {
+                        slot.classList.add('active-target');
+                    }
+                });
+                
+                slot.addEventListener('dragleave', () => {
+                    slot.classList.remove('active-target');
+                });
+                
+                slot.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    slot.classList.remove('active-target');
+                    const dataRaw = e.dataTransfer.getData('application/json');
+                    if (dataRaw) {
+                        const data = JSON.parse(dataRaw);
+                        handleDropOnSlot(slotIdx, data);
+                    }
+                });
+
+                wordRow.appendChild(slot);
+                globalSlotIndex++;
             }
-
-            // Normal Character
-            const slot = document.createElement('div');
-            slot.className = 'answer-slot';
-            slot.dataset.index = i;
             
-            // Interaction Events
-            slot.addEventListener('click', () => clearSlot(i));
+            slotsArea.appendChild(wordRow);
             
-            slot.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                if (!state.filledSlots[i]) {
-                    slot.classList.add('active-target');
-                }
-            });
-            
-            slot.addEventListener('dragleave', () => {
-                slot.classList.remove('active-target');
-            });
-            
-            slot.addEventListener('drop', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                slot.classList.remove('active-target');
-                const dataRaw = e.dataTransfer.getData('application/json');
-                if (dataRaw) {
-                    const data = JSON.parse(dataRaw);
-                    handleDropOnSlot(i, data);
-                }
-            });
-
-            currentWordRow.appendChild(slot);
-        }
+            // Add space to filledSlots map between words (for answer reconstruction)
+            if (wordIndex < words.length - 1) {
+                state.filledSlots[globalSlotIndex] = { text: ' ', isSpace: true };
+                globalSlotIndex++;
+            }
+        });
         
-        // Remove empty rows if any (e.g. trailing space)
-        if (currentWordRow.childElementCount === 0 && slotsArea.children.length > 1) {
-            slotsArea.removeChild(currentWordRow);
-        }
+        // Store total slots count for answer checking
+        state.totalSlots = globalSlotIndex;
+        state.wordStructure = words; // Store word structure for validation
         
         elements.dropZone.appendChild(slotsArea);
     }
@@ -462,28 +468,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function checkAnswerIfFull() {
-        const currentLevel = state.levels[state.currentLevelIndex];
-        const requiredLen = currentLevel.answer.length;
+        // Use the new totalSlots count (excludes spaces between words)
+        const totalCharSlots = state.wordStructure 
+            ? state.wordStructure.reduce((sum, word) => sum + word.length, 0)
+            : 0;
         
-        // Check if we have filled all slots
-        // state.filledSlots is a sparse array, so we check keys or count
+        // Count filled character slots (not spaces)
         let filledCount = 0;
         let constructedAnswer = "";
         
-        for(let i=0; i<requiredLen; i++) {
-            if(state.filledSlots[i]) {
-                filledCount++;
-                constructedAnswer += state.filledSlots[i].text;
+        // Iterate through all slots and build answer
+        for (let i = 0; i < state.totalSlots; i++) {
+            const slotData = state.filledSlots[i];
+            if (slotData) {
+                if (slotData.isSpace) {
+                    constructedAnswer += ' ';
+                } else {
+                    constructedAnswer += slotData.text;
+                    filledCount++;
+                }
             } else {
-                return; // Not full yet
+                // Slot not filled yet
+                return;
             }
         }
 
-        // It is full
-        console.log(`Checking: '${constructedAnswer}' vs '${currentLevel.answer}'`);
+        // Check if all character slots are filled
+        if (filledCount < totalCharSlots) {
+            return; // Not full yet
+        }
+
+        // It is full - compare with clean answer
+        console.log(`Checking: '${constructedAnswer}' vs '${state.cleanAnswer}'`);
         
-        const cleanConstructed = constructedAnswer.trim().toUpperCase();
-        const cleanAnswer = (currentLevel.answer || "").trim().toUpperCase();
+        const cleanConstructed = constructedAnswer.replace(/\s+/g, ' ').trim().toUpperCase();
+        const cleanAnswer = state.cleanAnswer || "";
 
         if (cleanConstructed === cleanAnswer) {
              handleVictory();
