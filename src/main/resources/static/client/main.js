@@ -220,6 +220,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const slotsArea = document.createElement('div');
         slotsArea.className = 'answer-slots-area';
         
+        // Determine sizing class based on answer complexity
+        const words = answer.split(' ').filter(w => w.length > 0);
+        const wordCount = words.length;
+        const maxWordLength = Math.max(...words.map(w => w.length));
+        
+        // Size logic: 
+        // - compact: more than 5 words OR longest word > 6 chars
+        // - medium: 4-5 words OR longest word 5-6 chars
+        // - large: 1-3 words AND longest word <= 4 chars
+        if (wordCount > 5 || maxWordLength > 6) {
+            slotsArea.classList.add('size-compact');
+        } else if (wordCount >= 4 || maxWordLength >= 5) {
+            slotsArea.classList.add('size-medium');
+        } else {
+            slotsArea.classList.add('size-large');
+        }
+        
         let currentWordRow = document.createElement('div');
         currentWordRow.className = 'word-row';
         slotsArea.appendChild(currentWordRow);
