@@ -148,7 +148,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- 3. RENDER OPTIONS ---
         elements.optionsContainer.innerHTML = '';
-        const shuffledOptions = [...level.options].sort(() => Math.random() - 0.5);
+        // Filter out spaces from options
+        const validOptions = level.options.filter(opt => opt && opt.trim() !== '');
+        const shuffledOptions = [...validOptions].sort(() => Math.random() - 0.5);
 
         shuffledOptions.forEach((opt, idx) => {
             const el = createDraggable(opt, idx);
@@ -218,13 +220,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const slotsArea = document.createElement('div');
         slotsArea.className = 'answer-slots-area';
         
-        // Create N slots based on answer length
-        // Note: this assumes answer is a string and "options" are characters.
-        // If "options" are words and answer is a sentence, we might need a different heuristic.
-        // But per user request "abc" -> "_ _ _", we go with length.
         const slotCount = answer.length; 
         
         for (let i = 0; i < slotCount; i++) {
+            const char = answer[i];
+            
+            if (char === ' ') {
+                // Handle Space
+                const spacer = document.createElement('div');
+                spacer.style.width = '20px'; // Visual gap
+                spacer.style.height = '1px';
+                slotsArea.appendChild(spacer);
+                
+                // Auto-fill state so we don't wait for it
+                state.filledSlots[i] = { text: ' ', isSpace: true };
+                continue;
+            }
+
             const slot = document.createElement('div');
             slot.className = 'answer-slot';
             slot.dataset.index = i;
