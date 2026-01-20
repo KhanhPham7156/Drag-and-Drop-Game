@@ -226,13 +226,17 @@ body {
 }
 
 .answer-slot {
-    width: 60px;
-    height: 60px;
+    width: 14vw; 
+    height: 14vw;
+    max-width: 55px; /* Slightly smaller to ensure 5 fit on narrow screens */
+    max-height: 55px;
+    
     border: 2px dashed hsla(0, 0%, 100%, 0.3);
     border-radius: 12px;
     display: flex;
     justify-content: center;
     align-items: center;
+    
     font-size: 1.5rem;
     font-weight: 700;
     color: white;
