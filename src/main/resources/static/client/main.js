@@ -216,35 +216,43 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.dropZone.innerHTML = '';
         elements.dropZone.classList.remove('correct', 'wrong');
 
-        // Create container for slots
+        // Create main container
         const slotsArea = document.createElement('div');
         slotsArea.className = 'answer-slots-area';
         
-        const slotCount = answer.length; 
+        let currentWordRow = document.createElement('div');
+        currentWordRow.className = 'word-row';
+        slotsArea.appendChild(currentWordRow);
+
+        const len = answer.length;
         
-        for (let i = 0; i < slotCount; i++) {
+        for (let i = 0; i < len; i++) {
             const char = answer[i];
             
             if (char === ' ') {
-                // Handle Space
-                const spacer = document.createElement('div');
-                spacer.style.width = '20px'; // Visual gap
-                spacer.style.height = '1px';
-                slotsArea.appendChild(spacer);
-                
-                // Auto-fill state so we don't wait for it
+                // Space -> Start new row
+                // 1. Auto-fill state for the space
                 state.filledSlots[i] = { text: ' ', isSpace: true };
+                
+                // 2. Only create new row if the current one isn't empty (avoids double rows for double spaces)
+                // OR if we want strict mapping 1-1, just close current row.
+                // Let's ensure we close the current row and start a new one.
+                if (currentWordRow.childElementCount > 0) {
+                    currentWordRow = document.createElement('div');
+                    currentWordRow.className = 'word-row';
+                    slotsArea.appendChild(currentWordRow);
+                }
                 continue;
             }
 
+            // Normal Character
             const slot = document.createElement('div');
             slot.className = 'answer-slot';
             slot.dataset.index = i;
             
-            // Add click listener to clear slot if filled
+            // Interaction Events
             slot.addEventListener('click', () => clearSlot(i));
             
-            // Drop events for specific slot
             slot.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 if (!state.filledSlots[i]) {
@@ -267,7 +275,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            slotsArea.appendChild(slot);
+            currentWordRow.appendChild(slot);
+        }
+        
+        // Remove empty rows if any (e.g. trailing space)
+        if (currentWordRow.childElementCount === 0 && slotsArea.children.length > 1) {
+            slotsArea.removeChild(currentWordRow);
         }
         
         elements.dropZone.appendChild(slotsArea);
